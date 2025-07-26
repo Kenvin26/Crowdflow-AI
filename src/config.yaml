@@ -1,0 +1,53 @@
+# CrowdFlow AI Configuration
+
+# Video Sources Configuration
+video_sources:
+  - id: 1
+    name: "Main Camera"
+    path: "data/videos/sample.mp4"  # Will be updated by dashboard
+    type: "file"  # file, rtsp, webcam
+    roi: [[100, 100], [500, 100], [500, 400], [100, 400]]  # Example ROI coordinates
+
+# Model Configuration
+model:
+  weights: "yolov8n.pt"
+  confidence: 0.5
+  iou_threshold: 0.45
+  classes: [0]  # 0 for person detection
+
+# Tracking Configuration
+tracking:
+  algorithm: "ocsort"  # ocsort, centroid
+  max_disappeared: 30
+  min_hits: 3
+
+# Counting Configuration
+counting:
+  line_y: 300  # Y-coordinate for counting line
+  direction: "both"  # in, out, both
+
+# Analytics Configuration
+analytics:
+  save_metrics: true
+  save_video: true
+  save_frames: false
+  output_dir: "data/outputs"
+
+# Dashboard Configuration
+dashboard:
+  refresh_rate: 5  # seconds
+  port: 8501
+  host: "localhost"
+
+# API Configuration
+api:
+  port: 8000
+  host: "0.0.0.0"
+  cors_origins: ["*"]
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "data/logs/crowdflow.log"
+  max_size: 10  # MB
+  backup_count: 5

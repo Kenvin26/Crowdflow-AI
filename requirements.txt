@@ -1,0 +1,18 @@
+ultralytics==8.2.52     # YOLOv8
+opencv-python
+numpy
+pandas
+scikit-learn
+torch                   # (pip will pick CPU; install CUDA wheel if you have GPU)
+filterpy                # (for Kalman filter if you use DeepSORT-lite)
+lapx                    # (Hungarian matching for trackers)
+streamlit
+streamlit-webrtc
+fastapi
+uvicorn[standard]
+pydantic
+prophet                 # optional, heavy. If it fails, use statsmodels instead.
+statsmodels
+matplotlib
+pyyaml
+
