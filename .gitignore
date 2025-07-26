@@ -44,20 +44,25 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Project specific
-data/videos/*.mp4
-data/videos/*.avi
-data/videos/*.mov
-data/outputs/*.mp4
-data/outputs/*.jpg
-data/outputs/*.csv
-data/logs/*.log
+# Project specific - exclude all data files
+data/videos/
+data/outputs/
+data/logs/
+*.mp4
+*.avi
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.csv
+*.log
 
-# Large model files (if not needed in repo)
+# Large model files
 *.pt
 *.pth
 *.onnx
 *.weights
+yolov8n.pt
 
 # Temporary files
 *.tmp
@@ -141,4 +146,7 @@ pids/
 .dynamodb/
 
 # TernJS port file
-.tern-port 
+.tern-port
+
+# pyflakes report
+pyflakes_report.txt 

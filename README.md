@@ -97,11 +97,7 @@ CrowdFlow AI/
    pip install -r requirements.txt
    ```
 
-5. **Download YOLO model** (if not included)
-   ```bash
-   # The yolov8n.pt file should be in the root directory
-   # If missing, it will be downloaded automatically on first run
-   ```
+5. **Download YOLO model** (will be downloaded automatically on first run)
 
 ### Running the Application
 
@@ -179,10 +175,6 @@ The system generates several output files:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
