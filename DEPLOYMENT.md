@@ -24,6 +24,18 @@
 
 ### Step 2: Deploy on Streamlit Cloud
 
+**Option A: Simple Deployment (Recommended)**
+1. **Go to Streamlit Cloud**
+   - Visit: https://share.streamlit.io/
+   - Sign in with your GitHub account
+
+2. **Create New App**
+   - Click "New app"
+   - Select your repository: `Kenvin26/Crowdflow-AI`
+   - Set main file path: `streamlit_app_simple.py`
+   - Click "Deploy!"
+
+**Option B: Full Deployment (May have OpenCV issues)**
 1. **Go to Streamlit Cloud**
    - Visit: https://share.streamlit.io/
    - Sign in with your GitHub account

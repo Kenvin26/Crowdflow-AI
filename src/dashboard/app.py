@@ -5,13 +5,24 @@ import time
 import os
 import yaml
 import subprocess
-import cv2
 import numpy as np
 import sys
+
+# Try to import OpenCV, but provide fallback if not available
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError:
+    OPENCV_AVAILABLE = False
 
 def main():
     st.set_page_config(page_title="CrowdFlow AI Dashboard", layout="wide")
     st.title("CrowdFlow AI Dashboard")
+
+    # Show OpenCV status
+    if not OPENCV_AVAILABLE:
+        st.warning("⚠️ OpenCV is not available in this environment. Video processing features are limited.")
+        st.info("For full functionality, please run this locally or use a different deployment platform.")
 
     API_URL = "http://localhost:8000/metrics/latest"
     METRICS_PATH = "data/outputs/metrics.csv"
@@ -41,57 +52,55 @@ def main():
         selected_video = os.path.basename(video_path)
 
     if record:
-        video_path = os.path.join(VIDEO_DIR, f"recorded_{int(time.time())}.mp4")
-        st.sidebar.info("Recording from webcam... (press 'q' to stop)")
-        # Note: Webcam recording is disabled in Streamlit Cloud for security
         st.sidebar.warning("Webcam recording is not available in Streamlit Cloud")
-        selected_video = None
 
     # Show video preview
     if selected_video and os.path.exists(os.path.join(VIDEO_DIR, selected_video)):
         st.video(os.path.join(VIDEO_DIR, selected_video))
-        # ROI and overlay visualization
-        try:
-            with open(CONFIG_PATH, "r") as f:
-                cfg = yaml.safe_load(f)
-            roi = cfg["video_sources"][0]["roi"] if "roi" in cfg["video_sources"][0] else None
-            frame = None
-            cap = cv2.VideoCapture(os.path.join(VIDEO_DIR, selected_video))
-            ret, frame = cap.read()
-            cap.release()
-            if ret and frame is not None:
-                overlay = frame.copy()
-                if roi:
-                    roi_np = np.array(roi, dtype=np.int32)
-                    cv2.polylines(overlay, [roi_np], isClosed=True, color=(0,255,255), thickness=2)
-                # Try to load real tracks from data/outputs/tracks.csv
-                tracks_path = "data/outputs/tracks.csv"
-                if os.path.exists(tracks_path):
-                    # Expected columns: frame, id, x1, y1, x2, y2, cx, cy
-                    tracks_df = pd.read_csv(tracks_path)
-                    # Show only tracks for the first frame
-                    first_frame = 0
-                    if not tracks_df.empty:
-                        first_frame = tracks_df["frame"].min()
-                        tracks = tracks_df[tracks_df["frame"] == first_frame]
-                        for _, row in tracks.iterrows():
-                            x1, y1, x2, y2 = int(row["x1"]), int(row["y1"]), int(row["x2"]), int(row["y2"])
-                            cx, cy = int(row["cx"]), int(row["cy"])
-                            track_id = int(row["id"])
-                            cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                            cv2.circle(overlay, (cx, cy), 6, (0,255,0), -1)
-                            cv2.putText(overlay, f"ID:{track_id}", (cx+8, cy-8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
-                else:
-                    # Fallback: show demo overlay
+        
+        # ROI and overlay visualization (only if OpenCV is available)
+        if OPENCV_AVAILABLE:
+            try:
+                with open(CONFIG_PATH, "r") as f:
+                    cfg = yaml.safe_load(f)
+                roi = cfg["video_sources"][0]["roi"] if "roi" in cfg["video_sources"][0] else None
+                frame = None
+                cap = cv2.VideoCapture(os.path.join(VIDEO_DIR, selected_video))
+                ret, frame = cap.read()
+                cap.release()
+                if ret and frame is not None:
+                    overlay = frame.copy()
                     if roi:
-                        h, w = overlay.shape[:2]
-                        for i in range(5):
-                            cx, cy = np.random.randint(roi_np[:,0].min(), roi_np[:,0].max()), np.random.randint(roi_np[:,1].min(), roi_np[:,1].max())
-                            cv2.circle(overlay, (cx, cy), 6, (0,255,0), -1)
-                            cv2.putText(overlay, f"ID:{i+1}", (cx+8, cy-8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
-                st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="ROI and Tracks (real if available)", use_container_width=True)
-        except Exception as e:
-            st.error(f"Error processing video preview: {e}")
+                        roi_np = np.array(roi, dtype=np.int32)
+                        cv2.polylines(overlay, [roi_np], isClosed=True, color=(0,255,255), thickness=2)
+                    # Try to load real tracks from data/outputs/tracks.csv
+                    tracks_path = "data/outputs/tracks.csv"
+                    if os.path.exists(tracks_path):
+                        tracks_df = pd.read_csv(tracks_path)
+                        first_frame = 0
+                        if not tracks_df.empty:
+                            first_frame = tracks_df["frame"].min()
+                            tracks = tracks_df[tracks_df["frame"] == first_frame]
+                            for _, row in tracks.iterrows():
+                                x1, y1, x2, y2 = int(row["x1"]), int(row["y1"]), int(row["x2"]), int(row["y2"])
+                                cx, cy = int(row["cx"]), int(row["cy"])
+                                track_id = int(row["id"])
+                                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                cv2.circle(overlay, (cx, cy), 6, (0,255,0), -1)
+                                cv2.putText(overlay, f"ID:{track_id}", (cx+8, cy-8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+                    else:
+                        # Fallback: show demo overlay
+                        if roi:
+                            h, w = overlay.shape[:2]
+                            for i in range(5):
+                                cx, cy = np.random.randint(roi_np[:,0].min(), roi_np[:,0].max()), np.random.randint(roi_np[:,1].min(), roi_np[:,1].max())
+                                cv2.circle(overlay, (cx, cy), 6, (0,255,0), -1)
+                                cv2.putText(overlay, f"ID:{i+1}", (cx+8, cy-8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+                    st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="ROI and Tracks (real if available)", use_container_width=True)
+            except Exception as e:
+                st.error(f"Error processing video preview: {e}")
+        else:
+            st.info("Video overlay preview requires OpenCV (not available in this environment)")
 
     # Show overlayed video if available
     overlayed_video_path = "data/outputs/overlayed_video.mp4"
@@ -103,9 +112,8 @@ def main():
             st.subheader("Original Video Preview")
             st.video(os.path.join(VIDEO_DIR, selected_video))
 
-    # --- Metrics and Charts (existing code) ---
     # Update config.yaml and trigger processing if new video selected
-    if selected_video:
+    if selected_video and OPENCV_AVAILABLE:
         try:
             with open(CONFIG_PATH, "r") as f:
                 cfg = yaml.safe_load(f)
@@ -126,6 +134,8 @@ def main():
                         st.sidebar.error(f"Processing failed: {e}")
         except Exception as e:
             st.error(f"Error updating configuration: {e}")
+    elif selected_video and not OPENCV_AVAILABLE:
+        st.info("Video processing requires OpenCV (not available in this environment)")
 
     # Load metrics history
     if os.path.exists(METRICS_PATH):
@@ -156,6 +166,40 @@ def main():
             st.error(f"Error loading metrics: {e}")
     else:
         st.info("No metrics available yet. Please upload and process a video.")
+
+    # Demo section for cloud deployment
+    st.sidebar.header("Demo Features")
+    if st.sidebar.button("Show Demo Data"):
+        st.subheader("Demo Analytics Data")
+        
+        # Create sample data
+        import numpy as np
+        dates = pd.date_range(start='2024-01-01', periods=100, freq='H')
+        demo_data = pd.DataFrame({
+            'timestamp': dates,
+            'active': np.random.randint(10, 50, 100),
+            'in': np.random.randint(0, 10, 100),
+            'out': np.random.randint(0, 10, 100),
+            'net': np.random.randint(-5, 5, 100)
+        })
+        
+        st.dataframe(demo_data.tail(10))
+        
+        # Show charts
+        st.subheader("Demo Metrics Over Time")
+        chart_cols = st.columns(4)
+        with chart_cols[0]:
+            st.line_chart(demo_data["active"])
+            st.caption("Active Count")
+        with chart_cols[1]:
+            st.line_chart(demo_data["in"])
+            st.caption("In Count")
+        with chart_cols[2]:
+            st.line_chart(demo_data["out"])
+            st.caption("Out Count")
+        with chart_cols[3]:
+            st.line_chart(demo_data["net"])
+            st.caption("Net Count")
 
 if __name__ == "__main__":
     main() 
