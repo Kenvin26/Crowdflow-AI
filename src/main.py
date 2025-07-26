@@ -2,12 +2,17 @@ import cv2
 import time
 import yaml
 import pandas as pd
+import warnings
 from pathlib import Path
 from detectors.yolo_detector import YOLODetector
 from tracking.centroid_tracker import CentroidTracker
 from tracking.ocsort_tracker import OCSort
 from counting.counter import FlowCounter
 import numpy as np
+
+# Suppress warnings for cloud deployment
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def load_config():
     with open("src/config.yaml") as f:
@@ -65,14 +70,17 @@ def main():
 
             # draw boxes & ids
             for oid, centroid in tracks.items():
-                cv2.circle(frame, (int(centroid[0]), int(centroid[1])), 4, (0,255,0), -1)
-                cv2.putText(frame, f"ID:{oid}", (int(centroid[0])+5, int(centroid[1])-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+                # Extract scalar values to avoid NumPy deprecation warnings
+                cx, cy = float(centroid[0]), float(centroid[1])
+                cv2.circle(frame, (int(cx), int(cy)), 4, (0,255,0), -1)
+                cv2.putText(frame, f"ID:{oid}", (int(cx)+5, int(cy)-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
 
             in_c, out_c = counter.update(tracks)
 
             # heatmap accumulation for motion in ROI
             for oid, c in tracks.items():
-                x, y = int(c[0]), int(c[1])
+                # Extract scalar values to avoid NumPy deprecation warnings
+                x, y = int(float(c[0])), int(float(c[1]))
                 if roi_mask[y, x] > 0:
                     heatmap[y, x] += 1
 
@@ -93,9 +101,10 @@ def main():
             # --- Save latest frame for dashboard live stream ---
             cv2.imwrite("data/outputs/live_frame.jpg", frame)
 
-            cv2.imshow(f"Cam {cam['id']}", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            # Skip GUI display in cloud environment
+            # cv2.imshow(f"Cam {cam['id']}", frame)
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     break
 
             # aggregate & log every N seconds (e.g., 5)
             if time.time() - last_log_time > 5:
@@ -116,7 +125,7 @@ def main():
         cap.release()
         out.release()
         break  # Only process the first camera/video for overlayed video
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()  # Skip in cloud environment
 
 if __name__ == "__main__":
     main()
