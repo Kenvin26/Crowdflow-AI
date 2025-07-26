@@ -149,4 +149,7 @@ pids/
 .tern-port
 
 # pyflakes report
-pyflakes_report.txt 
+pyflakes_report.txt
+
+# Streamlit
+.streamlit/secrets.toml 
