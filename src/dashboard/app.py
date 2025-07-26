@@ -61,6 +61,9 @@ def main():
         # ROI and overlay visualization (only if OpenCV is available)
         if OPENCV_AVAILABLE:
             try:
+                # Ensure numpy is available
+                import numpy as np
+                
                 with open(CONFIG_PATH, "r") as f:
                     cfg = yaml.safe_load(f)
                 roi = cfg["video_sources"][0]["roi"] if "roi" in cfg["video_sources"][0] else None
@@ -99,6 +102,7 @@ def main():
                     st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="ROI and Tracks (real if available)", use_container_width=True)
             except Exception as e:
                 st.error(f"Error processing video preview: {e}")
+                st.info("This might be due to missing dependencies or environment issues.")
         else:
             st.info("Video overlay preview requires OpenCV (not available in this environment)")
 
@@ -173,15 +177,19 @@ def main():
         st.subheader("Demo Analytics Data")
         
         # Create sample data
-        import numpy as np
-        dates = pd.date_range(start='2024-01-01', periods=100, freq='H')
-        demo_data = pd.DataFrame({
-            'timestamp': dates,
-            'active': np.random.randint(10, 50, 100),
-            'in': np.random.randint(0, 10, 100),
-            'out': np.random.randint(0, 10, 100),
-            'net': np.random.randint(-5, 5, 100)
-        })
+        try:
+            import numpy as np
+            dates = pd.date_range(start='2024-01-01', periods=100, freq='H')
+            demo_data = pd.DataFrame({
+                'timestamp': dates,
+                'active': np.random.randint(10, 50, 100),
+                'in': np.random.randint(0, 10, 100),
+                'out': np.random.randint(0, 10, 100),
+                'net': np.random.randint(-5, 5, 100)
+            })
+        except ImportError:
+            st.error("NumPy is not available. Cannot generate demo data.")
+            return
         
         st.dataframe(demo_data.tail(10))
         
